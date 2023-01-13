@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<Version>3.0.11</Version>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
+		<Description>XML Provider</Description>
+	</PropertyGroup>
+	<PropertyGroup>
+		<PackageProjectUrl>https://doc.dynamicweb.com/</PackageProjectUrl>
+		<PackageTags>Dynamicweb dw10 addin dataintegration providers</PackageTags>
+		<Product>Dynamicweb CMS</Product>
+		<Company>Dynamicweb Software A/S</Company>
+		<Authors>Dynamicweb Software A/S</Authors>
+		<Copyright>Copyright © 2020 Dynamicweb Software A/S</Copyright>
+	</PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>net7.0</TargetFramework>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Dynamicweb" Version="9.10.19" />
+		<PackageReference Include="Dynamicweb.Core" Version="3.1.0" />
+		<PackageReference Include="Dynamicweb.DataIntegration" Version="3.0.9" />
+		<PackageReference Include="Dynamicweb.Ecommerce" Version="1.10.49" />
+		<PackageReference Include="Dynamicweb.Environment" Version="4.0.3" />
+		<PackageReference Include="Dynamicweb.Extensibility" Version="4.0.2" />
+		<PackageReference Include="Dynamicweb.Logging" Version="5.1.2" />
+		<PackageReference Include="Dynamicweb.Security" Version="11.1.0" />
+	</ItemGroup>
+</Project>
