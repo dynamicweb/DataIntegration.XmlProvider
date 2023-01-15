@@ -48,7 +48,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 {
                     if (!string.IsNullOrEmpty(WorkingDirectory))
                     {
-                        _xmlWriter = XmlWriter.Create(_workingDirectory.CombinePaths(DestinationFolder,GetDestinationFile()), new XmlWriterSettings { Encoding = this.Encoding, NewLineHandling = NewLineHandling.Replace, Indent = true });
+                        _xmlWriter = XmlWriter.Create(_workingDirectory.CombinePaths(DestinationFolder, GetDestinationFile()), new XmlWriterSettings { Encoding = this.Encoding, NewLineHandling = NewLineHandling.Replace, Indent = true });
                     }
                     else
                     {
@@ -235,7 +235,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 }
 
                 if (!string.IsNullOrEmpty(SourceFileFromUrl))
-                {                    
+                {
                     string filePath = srcFolderPath.CombinePaths(SourceFileFromUrl);
                     if (!File.Exists(filePath))
                     {
@@ -275,7 +275,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         public void WriteToSourceFile(string InputXML)
         {
             WorkingDirectory = SystemInformation.MapPath("/Files/");
-            FilesFolderName = Content.Files.FilesAndFolders.GetFilesFolderName();
+            FilesFolderName = "Files";
             if (!string.IsNullOrEmpty(SourceFile))
             {
                 //try to save the xml with its encoding
@@ -310,7 +310,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         public string ReadOutputFile()
         {
 
-            return TextFileHelper.ReadTextFile(_workingDirectory.CombinePaths(DestinationFolder,GetDestinationFile()));
+            return TextFileHelper.ReadTextFile(_workingDirectory.CombinePaths(DestinationFolder, GetDestinationFile()));
         }
 
         public override string ValidateSourceSettings()
@@ -375,13 +375,43 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             if (!Directory.Exists(dstPath))
                 return "Destination folder \"" + DestinationFolder + "\" does not exist";
 
-            if (DestinationFile == "" || !Dynamicweb.Content.Files.FilesAndFolders.ValidateFilename(DestinationFile))
+            if (DestinationFile == "" || !ValidateFilename(DestinationFile))
                 return "Destination file name is not valid.";
             // check output XSL file exists if set
             if (!string.IsNullOrEmpty(DestinationXslFile) && !File.Exists(WorkingDirectory.CombinePaths(DestinationXslFile)))
                 return "XSL file \"" + DestinationXslFile + "\" does not exist";
 
             return "";
+        }
+
+        private bool ValidateFilename(string fileNameWithPath)
+        {
+            try
+            {
+                string fileName = Path.GetFileName(fileNameWithPath);
+                string directory = Path.GetDirectoryName(fileNameWithPath);
+                foreach (char c in Path.GetInvalidFileNameChars())
+                {
+                    if (fileName.Contains(Converter.ToString(c)))
+                    {
+                        return false;
+                    }
+                }
+
+                foreach (char c in Path.GetInvalidPathChars())
+                {
+                    if (directory.Contains(Converter.ToString(c)))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         public override void LoadSettings(Job job)
@@ -714,9 +744,9 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             Encoding = Encoding.UTF8;
             SkipTroublesomeRows = true;
             ExportProductFieldDefinitions = false;
-            if (string.IsNullOrEmpty(FilesFolderName) && !string.IsNullOrEmpty(Dynamicweb.Content.Files.FilesAndFolders.GetFilesFolderName()))
+            if (string.IsNullOrEmpty(FilesFolderName))
             {
-                FilesFolderName = Dynamicweb.Content.Files.FilesAndFolders.GetFilesFolderName();
+                FilesFolderName = "Files";
             }
             ArchiveSourceFiles = false;
         }
@@ -728,7 +758,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             ExportProductFieldDefinitions = false;
             ArchiveSourceFiles = false;
             SourceDecimalSeparator = NoneDecimalSeparator;
-            FilesFolderName = Dynamicweb.Content.Files.FilesAndFolders.GetFilesFolderName();
+            FilesFolderName = "Files";
 
             foreach (XmlNode node in xmlNode.ChildNodes)
             {
@@ -1187,7 +1217,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                     catch (Exception ex)
                     {
                         Logger.Log($"Error loading xslt: {ex.Message}");
-                        throw ex;
+                        throw;
                     }
 
                     XmlWriterSettings writerSettings = oTransform.OutputSettings != null ? oTransform.OutputSettings.Clone() : new XmlWriterSettings();
@@ -1202,7 +1232,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                         catch (Exception ex)
                         {
                             Logger.Log($"Error xml xslt transform: {ex.Message}");
-                            throw ex;
+                            throw;
                         }
                     }
                 }
@@ -1262,7 +1292,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         {
             configReader.MoveToAttribute("systemName");
             string systemName = configReader.Value;
-            if (!OrderField.GetOrderFields().Any(of => of.SystemName == systemName))
+            if (!Ecommerce.Services.OrderFields.GetOrderFields().Any(of => of.SystemName == systemName))
             {
                 OrderField orderField = new OrderField();
                 configReader.MoveToAttribute("name");
@@ -1275,7 +1305,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 configReader.MoveToAttribute("typeId");
                 orderField.TypeId = int.Parse(configReader.Value);
                 orderField.TypeName = Ecommerce.Services.FieldType.GetFieldTypes(true).First()?.Name;
-                orderField.Save("0");
+                Ecommerce.Services.OrderFields.Save(orderField);
             }
         }
 
@@ -1288,7 +1318,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             configReader.MoveToAttribute("length");
             int length = Converter.ToInt32(configReader.Value);
             OrderLineField orderLineField = new OrderLineField(systemName, name, length);
-            orderLineField.Save();
+            Ecommerce.Services.OrderLineFields.Save(orderLineField);
         }
 
         private void ImportUserCustomField(XmlReader configReader)
@@ -1329,16 +1359,8 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             configReader.MoveToAttribute("categoryId");
             string categoryId = configReader.Value;
             var category = Ecommerce.Services.ProductCategories.GetCategoryById(categoryId);
-            if (category == null)
-            {
-                category = Ecommerce.Services.ProductCategories.CreateCategory(categoryId);
-            }
-            var categoryField = Ecommerce.Services.ProductCategories.GetFieldsByCategoryId(categoryId).GetFieldById(id);
-            if (categoryField != null)
-            {
-                categoryField.Label = label;
-            }
-            else
+            var categoryField = Ecommerce.Services.ProductCategoryFields.GetFieldById(categoryId, id);
+            if (categoryField == null)
             {
                 Ecommerce.Services.ProductCategories.AddFieldToCategory(category, id, label, templateTag, typeId,
                   string.Empty, FieldListPresentationType.RadioButtonList, new FieldOptionCollection());
@@ -1460,7 +1482,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         }
 
         private void CheckSourceFilesChanging()
-        {            
+        {
             IEnumerable<string> files = GetSourceFiles().Distinct();
             if (files != null && files.Count() > 0)
             {
