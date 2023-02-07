@@ -31,6 +31,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         private XmlReader _xmlReader;
         private string _destinationFolder = "/Files/Integration";
         private string _sourceFolder = "/Files/Integration";
+        private const string XmlExtension = ".xml";
         private string _sourceFileName;
         private string _destinationFileName;
         private string _xslTransformationTimestamp;
@@ -101,16 +102,16 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             { return !string.IsNullOrEmpty(XslFile); }
         }
 
-        [AddInParameter("Destination file"), AddInParameterEditor(typeof(TextParameterEditor), "inputClass=NewUIinput;"), AddInParameterGroup("Destination")]
+        [AddInParameter("Destination file"), AddInParameterEditor(typeof(TextParameterEditor), $"inputClass=NewUIinput;append={XmlExtension};"), AddInParameterGroup("Destination")]
         public string DestinationFile
         {
             get
-            {
-                return _destinationFileName;
+            {                
+                return Path.GetFileNameWithoutExtension(_destinationFileName);
             }
             set
             {
-                _destinationFileName = value;
+                _destinationFileName = Path.GetFileNameWithoutExtension(value);
             }
         }
 
@@ -299,10 +300,10 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         /// <returns></returns>
         private string GetDestinationFile()
         {
-            string ret = DestinationFile;
+            string ret = $"{DestinationFile}{XmlExtension}";
             if (IncludeTimestampInFileName)
-            {
-                ret = Path.GetFileNameWithoutExtension(DestinationFile) + _timeStamp.ToString("yyyyMMdd-HHmmssFFFFFFF") + Path.GetExtension(DestinationFile);
+            {                
+                ret = Path.GetFileNameWithoutExtension(DestinationFile) + _timeStamp.ToString("yyyyMMdd-HHmmssFFFFFFF") + XmlExtension;
             }
             return ret;
         }
@@ -335,7 +336,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 }
                 else
                 {
-                    if (!srcFilePath.EndsWith(".xml"))
+                    if (!srcFilePath.EndsWith(XmlExtension))
                     {
                         return "Source file \"" + SourceFile + "\" is not xml file";
                     }
@@ -514,7 +515,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                     }
                     else
                     {
-                        files = Directory.EnumerateFiles(srcPath, "*.xml", SearchOption.TopDirectoryOnly).OrderBy(fileName => fileName);
+                        files = Directory.EnumerateFiles(srcPath, XmlExtension, SearchOption.TopDirectoryOnly).OrderBy(fileName => fileName);
                     }
                 }
             }
@@ -1084,7 +1085,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                         {
                             if (XslTransform)
                             {
-                                _sourceFiles.Add(f.Replace($"-{_xslTransformationTimestamp}.xt", ".xml"));
+                                _sourceFiles.Add(f.Replace($"-{_xslTransformationTimestamp}.xt", XmlExtension));
                             }
                             else
                             {
@@ -1427,7 +1428,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             if (string.IsNullOrEmpty(_sourceFileName))
             {
                 //Skip not used xml files from the Source folder
-                if (file.EndsWith(".xml") && !_sourceFiles.Contains(file))
+                if (file.EndsWith(XmlExtension) && !_sourceFiles.Contains(file))
                 {
                     return true;
                 }
