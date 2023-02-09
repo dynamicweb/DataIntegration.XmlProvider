@@ -72,7 +72,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                             _xmlWriter.WriteStartElement("column");
                             _xmlWriter.WriteAttributeString("columnName", mapping.DestinationColumn.Name);
 
-                            if (mapping.HasScriptWithValue() ||
+                            if (mapping.HasScriptWithValue ||
                                 (mapping.SourceColumn == null && mapping.ScriptType != ScriptType.None)) //in case when "None" selected as a SourceColumn                                
                             {
                                 _xmlWriter.WriteCData(mapping.GetScriptValue());
