@@ -178,7 +178,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             {
                 foreach (ColumnMapping cm in _mapping.GetColumnMappings())
                 {
-                    if (cm.SourceColumn != null && _nextRow.ContainsKey(cm.SourceColumn.Name) && _nextRow[cm.SourceColumn.Name] != DBNull.Value && !cm.HasScriptWithValue() &&
+                    if (cm.SourceColumn != null && _nextRow.ContainsKey(cm.SourceColumn.Name) && _nextRow[cm.SourceColumn.Name] != DBNull.Value && !cm.HasScriptWithValue &&
                         cm.DestinationColumn != null && (cm.DestinationColumn.Type == typeof(double) || cm.DestinationColumn.Type == typeof(float)))
                     {
                         string value = _nextRow[cm.SourceColumn.Name].ToString();

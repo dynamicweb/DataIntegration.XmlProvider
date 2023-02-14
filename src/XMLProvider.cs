@@ -29,8 +29,8 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         private Schema _schema;
         private XmlWriter _xmlWriter;
         private XmlReader _xmlReader;
-        private string _destinationFolder = "/Files/Integration";
-        private string _sourceFolder = "/Files/Integration";
+        private string _destinationFolder = "/Files";
+        private string _sourceFolder = "/Files";
         private const string XmlExtension = ".xml";
         private string _sourceFileName;
         private string _destinationFileName;
@@ -60,7 +60,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             }
         }
 
-        [AddInParameter("Source folder"), AddInParameterEditor(typeof(FolderSelectEditor), "htmlClass=NewUIinput"), AddInParameterGroup("Source")]
+        [AddInParameter("Source folder"), AddInParameterEditor(typeof(FolderSelectEditor), "folder=/Files/"), AddInParameterGroup("Source")]
         public string SourceFolder
         {
             get
@@ -69,7 +69,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             { _sourceFolder = value; }
         }
 
-        [AddInParameter("Source file"), AddInParameterEditor(typeof(FileManagerEditor), "inputClass=NewUIinput;folder=/Files/;Icon=fa fa-exclamation-triangle;Tooltip=Selecting a source file will override source folder selection;allowBrowse=true;"), AddInParameterGroup("Source")]
+        [AddInParameter("Source file"), AddInParameterEditor(typeof(FileManagerEditor), "folder=/Files/;Tooltip=Selecting a source file will override source folder selection"), AddInParameterGroup("Source")]
         public string SourceFile
         {
             get
@@ -85,10 +85,10 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         [AddInParameter("Delete source file"), AddInParameterEditor(typeof(YesNoParameterEditor), ""), AddInParameterGroup("Source")]
         public bool DeleteSourceFile { get; set; }
 
-        [AddInParameter("XSL file"), AddInParameterEditor(typeof(FileManagerEditor), "extensions=xsl,xslt;allowBrowse=true"), AddInParameterGroup("Source")]
+        [AddInParameter("XSL file"), AddInParameterEditor(typeof(FileManagerEditor), "folder=/Files/;extensions=xsl,xslt"), AddInParameterGroup("Source")]
         public string XslFile { get; set; }
 
-        [AddInParameter("Destination XSL file"), AddInParameterEditor(typeof(FileManagerEditor), "extensions=xsl,xslt;allowBrowse=true"), AddInParameterGroup("Destination")]
+        [AddInParameter("Destination XSL file"), AddInParameterEditor(typeof(FileManagerEditor), "folder=/Files/;extensions=xsl,xslt"), AddInParameterGroup("Destination")]
         public string DestinationXslFile { get; set; }
 
         public override bool SchemaIsEditable
@@ -102,11 +102,11 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             { return !string.IsNullOrEmpty(XslFile); }
         }
 
-        [AddInParameter("Destination file"), AddInParameterEditor(typeof(TextParameterEditor), $"inputClass=NewUIinput;append={XmlExtension};"), AddInParameterGroup("Destination")]
+        [AddInParameter("Destination file"), AddInParameterEditor(typeof(TextParameterEditor), $"append={XmlExtension};required"), AddInParameterGroup("Destination")]
         public string DestinationFile
         {
             get
-            {                
+            {
                 return Path.GetFileNameWithoutExtension(_destinationFileName);
             }
             set
@@ -115,7 +115,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             }
         }
 
-        [AddInParameter("Destination folder"), AddInParameterEditor(typeof(FolderSelectEditor), "htmlClass=NewUIinput;"), AddInParameterGroup("Destination")]
+        [AddInParameter("Destination folder"), AddInParameterEditor(typeof(FolderSelectEditor), "folder=/Files/"), AddInParameterGroup("Destination")]
         public string DestinationFolder
         {
             get
@@ -126,7 +126,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
 
         public Encoding Encoding { get; set; }
 
-        [AddInParameter("Destination encoding"), AddInParameterEditor(typeof(DropDownParameterEditor), "NewGUI=true;none=false;"), AddInParameterGroup("Destination")]
+        [AddInParameter("Destination encoding"), AddInParameterEditor(typeof(DropDownParameterEditor), "none=false"), AddInParameterGroup("Destination")]
         public string DestionationEncoding
         {
             get { return Encoding.EncodingName; }
@@ -145,13 +145,13 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         [AddInParameter("Export Product Field Definitions"), AddInParameterEditor(typeof(YesNoParameterEditor), ""), AddInParameterGroup("Destination")]
         public bool ExportProductFieldDefinitions { get; set; }
 
-        [AddInParameter("Number format culture"), AddInParameterEditor(typeof(DropDownParameterEditor), ""), AddInParameterGroup("Destination")]
+        [AddInParameter("Number format culture"), AddInParameterEditor(typeof(DropDownParameterEditor), "none=true"), AddInParameterGroup("Destination")]
         public string ExportCultureInfo { get; set; }
 
         private readonly string DetectAutomaticallySeparator = "Detect automatically";
         private readonly string NoneDecimalSeparator = "Use system culture";
         private string _sourceDecimalSeparator;
-        [AddInParameter("Source decimal separator"), AddInParameterEditor(typeof(DropDownParameterEditor), "NewGUI=true;none=false"), AddInParameterGroup("Source")]
+        [AddInParameter("Source decimal separator"), AddInParameterEditor(typeof(DropDownParameterEditor), "none=false"), AddInParameterGroup("Source")]
         public string SourceDecimalSeparator
         {
             get
@@ -302,7 +302,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         {
             string ret = $"{DestinationFile}{XmlExtension}";
             if (IncludeTimestampInFileName)
-            {                
+            {
                 ret = Path.GetFileNameWithoutExtension(DestinationFile) + _timeStamp.ToString("yyyyMMdd-HHmmssFFFFFFF") + XmlExtension;
             }
             return ret;
