@@ -83,7 +83,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                             }
                             else if (mapping.SourceColumn.Type == typeof(DateTime))
                             {
-                                _xmlWriter.WriteCData(((DateTime)p[mapping.SourceColumn.Name]).ToString("dd-MM-yyyy HH:mm:ss:fff"));
+                                _xmlWriter.WriteCData(Core.Converter.ToDateTime(p[mapping.SourceColumn.Name]).ToString("dd-MM-yyyy HH:mm:ss:fff"));
                             }
                             else if (_cultureInfo != null && (mapping.SourceColumn.Type == typeof(int) ||
                                     mapping.SourceColumn.Type == typeof(decimal) ||
