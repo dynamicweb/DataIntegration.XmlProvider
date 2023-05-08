@@ -67,7 +67,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         {
             foreach (MappingConditional conditional in _mapping.Conditionals)
             {
-                var sourceColumnConditional = _nextRow[conditional.SourceColumn.Name].ToString();
+                var sourceColumnConditional = _nextRow[conditional.SourceColumn.Name]?.ToString() ?? string.Empty;
                 switch (conditional.ConditionalOperator)
                 {
                     case ConditionalOperator.EqualTo:
