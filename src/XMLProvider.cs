@@ -1364,7 +1364,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             if (categoryField == null)
             {
                 Ecommerce.Services.ProductCategories.AddFieldToCategory(category, id, label, templateTag, typeId,
-                  string.Empty, FieldListPresentationType.RadioButtonList, new FieldOptionCollection());
+                  string.Empty, FieldListPresentationType.RadioButtonList, 0, string.Empty);
             }
             Ecommerce.Services.ProductCategories.SaveCategory(category);
         }

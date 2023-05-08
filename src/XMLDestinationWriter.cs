@@ -33,8 +33,6 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
 
         public void Write(Dictionary<string, object> p)
         {
-            if (!_mapping.Conditionals.CheckConditionals(p))
-                return;
             if (_skipTroublesomeRows)
             {
                 foreach (KeyValuePair<string, object> obj in p)
@@ -144,5 +142,5 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             if (inString == null) return true;
             return inString.All(ch => ((ch >= 0x0020 && ch <= 0xD7FF) || (ch >= 0xE000 && ch <= 0xFFFD) || ch == 0x0009 || ch == 0x000A || ch == 0x000D));
         }
-    }    
+    }
 }
