@@ -68,28 +68,29 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             foreach (MappingConditional conditional in _mapping.Conditionals)
             {
                 var sourceColumnConditional = _nextRow[conditional.SourceColumn.Name]?.ToString() ?? string.Empty;
+                var theCondtion = conditional?.Condition ?? string.Empty;
                 switch (conditional.ConditionalOperator)
                 {
                     case ConditionalOperator.EqualTo:
-                        if (!sourceColumnConditional.Equals(conditional.Condition))
+                        if (!sourceColumnConditional.Equals(theCondtion))
                         {
                             return false;
                         }
                         break;
                     case ConditionalOperator.DifferentFrom:
-                        if (sourceColumnConditional.Equals(conditional.Condition))
+                        if (sourceColumnConditional.Equals(theCondtion))
                         {
                             return false;
                         }
                         break;
                     case ConditionalOperator.Contains:
-                        if (!sourceColumnConditional.Contains(conditional.Condition))
+                        if (!sourceColumnConditional.Contains(theCondtion))
                         {
                             return false;
                         }
                         break;
                     case ConditionalOperator.LessThan:
-                        string lessThanDecimalValue = conditional.Condition;
+                        string lessThanDecimalValue = theCondtion;
                         if (!string.IsNullOrEmpty(_decimalSeparator) && _decimalSeparator != System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
                         {
                             lessThanDecimalValue = lessThanDecimalValue.Replace(System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, "");
@@ -101,7 +102,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                         }
                         break;
                     case ConditionalOperator.GreaterThan:
-                        string greaterThanDecimalValue = conditional.Condition;
+                        string greaterThanDecimalValue = theCondtion;
                         if (!string.IsNullOrEmpty(_decimalSeparator) && _decimalSeparator != System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
                         {
                             greaterThanDecimalValue = greaterThanDecimalValue.Replace(System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, "");
@@ -113,7 +114,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                         }
                         break;
                     case ConditionalOperator.In:
-                        var inConditionalValue = conditional.Condition;
+                        var inConditionalValue = theCondtion;
                         if (!string.IsNullOrEmpty(inConditionalValue))
                         {
                             List<string> inConditions = inConditionalValue.Split(',').Select(obj => obj.Trim()).ToList();
@@ -124,37 +125,37 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                         }
                         break;
                     case ConditionalOperator.StartsWith:
-                        if (!sourceColumnConditional.StartsWith(conditional.Condition))
+                        if (!sourceColumnConditional.StartsWith(theCondtion))
                         {
                             return false;
                         }
                         break;
                     case ConditionalOperator.NotStartsWith:
-                        if (sourceColumnConditional.StartsWith(conditional.Condition))
+                        if (sourceColumnConditional.StartsWith(theCondtion))
                         {
                             return false;
                         }
                         break;
                     case ConditionalOperator.EndsWith:
-                        if (!sourceColumnConditional.EndsWith(conditional.Condition))
+                        if (!sourceColumnConditional.EndsWith(theCondtion))
                         {
                             return false;
                         }
                         break;
                     case ConditionalOperator.NotEndsWith:
-                        if (sourceColumnConditional.EndsWith(conditional.Condition))
+                        if (sourceColumnConditional.EndsWith(theCondtion))
                         {
                             return false;
                         }
                         break;
                     case ConditionalOperator.NotContains:
-                        if (sourceColumnConditional.Contains(conditional.Condition))
+                        if (sourceColumnConditional.Contains(theCondtion))
                         {
                             return false;
                         }
                         break;
                     case ConditionalOperator.NotIn:
-                        var notInConditionalValue = conditional.Condition;
+                        var notInConditionalValue = theCondtion;
                         if (!string.IsNullOrEmpty(notInConditionalValue))
                         {
                             List<string> notInConditions = notInConditionalValue.Split(',').Select(obj => obj.Trim()).ToList();
