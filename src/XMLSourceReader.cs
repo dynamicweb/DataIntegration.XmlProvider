@@ -9,24 +9,27 @@ using System.Xml;
 namespace Dynamicweb.DataIntegration.Providers.XmlProvider
 {
     class XmlSourceReader : ISourceReader
-	{
-		private XmlReader _xmlReader;
-		private readonly Mapping _mapping;		
-		Dictionary<string, object> _nextRow;
-		private readonly XmlProvider _provider;
+    {
+        private XmlReader _xmlReader;
+        private readonly Mapping _mapping;
+        Dictionary<string, object> _nextRow;
+        private readonly XmlProvider _provider;
         private readonly string _decimalSeparator;
         private readonly bool _autoDetectDecimalSeparator;
+        private readonly ColumnMappingCollection _columnMappings;
 
         public XmlSourceReader(XmlProvider provider, Mapping mapping, string decimalSeparator, bool autoDetectDecimalSeparator)
-		{
-			_provider = provider;
-			_mapping = mapping;
+        {
+            _provider = provider;
+            _mapping = mapping;
             _decimalSeparator = decimalSeparator;
             _autoDetectDecimalSeparator = autoDetectDecimalSeparator;
-            _xmlReader = _provider.GetXmlReader(_mapping);            
+            _xmlReader = _provider.GetXmlReader(_mapping);
+            _columnMappings = _mapping.GetColumnMappings();
         }
-		public bool IsDone()
-		{			
+
+        public bool IsDone()
+        {
             if (_xmlReader != null)
             {
                 while (_xmlReader.Read())
@@ -48,7 +51,9 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 ReplaceDecimalSeparator();
 
                 if (RowMatchesConditions())
+                {
                     return false;
+                }
 
                 return IsDone();
             }
@@ -56,56 +61,135 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             {
                 return true;
             }
-		}
+        }
 
-		private bool RowMatchesConditions()
-		{
-			foreach(MappingConditional conditional in _mapping.Conditionals)
-			{
-				switch(conditional.ConditionalOperator)
-				{
-					case ConditionalOperator.EqualTo:
-						if(_nextRow[conditional.SourceColumn.Name].ToString() == conditional.Condition) { }
-						else
-							return false;
-						break;
-					case ConditionalOperator.DifferentFrom:
-						if(_nextRow[conditional.SourceColumn.Name].ToString() != conditional.Condition) { }
-						else
-							return false;
-						break;
-                    case ConditionalOperator.Contains:
-                        if (!_nextRow[conditional.SourceColumn.Name].ToString().Contains(conditional.Condition))
+        private bool RowMatchesConditions()
+        {
+            foreach (MappingConditional conditional in _mapping.Conditionals)
+            {
+                var sourceColumnConditional = _nextRow[conditional.SourceColumn.Name]?.ToString() ?? string.Empty;
+                var theCondtion = conditional?.Condition ?? string.Empty;
+                switch (conditional.ConditionalOperator)
+                {
+                    case ConditionalOperator.EqualTo:
+                        if (!sourceColumnConditional.Equals(theCondtion))
+                        {
                             return false;
+                        }
                         break;
-					case ConditionalOperator.LessThan:
-						throw new Exception("can not do a 'Less Than' comparison of items from XML");
-					case ConditionalOperator.GreaterThan:
-						throw new Exception("can not do a 'Greater Than' comparison of items from XML");
-					default:
-						break;
-				}
-			}
-			return true;
-		}
+                    case ConditionalOperator.DifferentFrom:
+                        if (sourceColumnConditional.Equals(theCondtion))
+                        {
+                            return false;
+                        }
+                        break;
+                    case ConditionalOperator.Contains:
+                        if (!sourceColumnConditional.Contains(theCondtion))
+                        {
+                            return false;
+                        }
+                        break;
+                    case ConditionalOperator.LessThan:
+                        string lessThanDecimalValue = theCondtion;
+                        if (!string.IsNullOrEmpty(_decimalSeparator) && _decimalSeparator != System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
+                        {
+                            lessThanDecimalValue = lessThanDecimalValue.Replace(System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, "");
+                            lessThanDecimalValue = lessThanDecimalValue.Replace(_decimalSeparator, System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+                        }
+                        if (Converter.ToDouble(sourceColumnConditional) >= Converter.ToDouble(lessThanDecimalValue))
+                        {
+                            return false;
+                        }
+                        break;
+                    case ConditionalOperator.GreaterThan:
+                        string greaterThanDecimalValue = theCondtion;
+                        if (!string.IsNullOrEmpty(_decimalSeparator) && _decimalSeparator != System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator)
+                        {
+                            greaterThanDecimalValue = greaterThanDecimalValue.Replace(System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator, "");
+                            greaterThanDecimalValue = greaterThanDecimalValue.Replace(_decimalSeparator, System.Globalization.CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator);
+                        }
+                        if (Converter.ToDouble(sourceColumnConditional) <= Converter.ToDouble(greaterThanDecimalValue))
+                        {
+                            return false;
+                        }
+                        break;
+                    case ConditionalOperator.In:
+                        var inConditionalValue = theCondtion;
+                        if (!string.IsNullOrEmpty(inConditionalValue))
+                        {
+                            List<string> inConditions = inConditionalValue.Split(',').Select(obj => obj.Trim()).ToList();
+                            if (!inConditions.Contains(sourceColumnConditional))
+                            {
+                                return false;
+                            }
+                        }
+                        break;
+                    case ConditionalOperator.StartsWith:
+                        if (!sourceColumnConditional.StartsWith(theCondtion))
+                        {
+                            return false;
+                        }
+                        break;
+                    case ConditionalOperator.NotStartsWith:
+                        if (sourceColumnConditional.StartsWith(theCondtion))
+                        {
+                            return false;
+                        }
+                        break;
+                    case ConditionalOperator.EndsWith:
+                        if (!sourceColumnConditional.EndsWith(theCondtion))
+                        {
+                            return false;
+                        }
+                        break;
+                    case ConditionalOperator.NotEndsWith:
+                        if (sourceColumnConditional.EndsWith(theCondtion))
+                        {
+                            return false;
+                        }
+                        break;
+                    case ConditionalOperator.NotContains:
+                        if (sourceColumnConditional.Contains(theCondtion))
+                        {
+                            return false;
+                        }
+                        break;
+                    case ConditionalOperator.NotIn:
+                        var notInConditionalValue = theCondtion;
+                        if (!string.IsNullOrEmpty(notInConditionalValue))
+                        {
+                            List<string> notInConditions = notInConditionalValue.Split(',').Select(obj => obj.Trim()).ToList();
+                            if (notInConditions.Contains(sourceColumnConditional))
+                            {
+                                return false;
+                            }
+                        }
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return true;
+        }
 
-		public Dictionary<string, object> GetNext()
-		{
-			return _nextRow;
-		}
-		private void SetNextRow()
-		{
-			_nextRow = new Dictionary<string, object>();
-			try
-			{
-				string itemName = _xmlReader.Name;
-				string key = "";
-				object value = "";
+        public Dictionary<string, object> GetNext()
+        {
+            return _nextRow;
+        }
 
-				while(_xmlReader.Read() && !(_xmlReader.NodeType == XmlNodeType.EndElement && _xmlReader.Name == itemName))
-				{
-					if(_xmlReader.NodeType == XmlNodeType.Element)
-					{
+        private void SetNextRow()
+        {
+            _nextRow = new Dictionary<string, object>();
+            try
+            {
+                string itemName = _xmlReader.Name;
+                string key = "";
+                object value = "";
+
+                while (_xmlReader.Read() && !(_xmlReader.NodeType == XmlNodeType.EndElement && _xmlReader.Name == itemName))
+                {
+                    if (_xmlReader.NodeType == XmlNodeType.Element)
+                    {
                         bool isnull = false;
                         for (int i = 0; i < _xmlReader.AttributeCount; i++)
                         {
@@ -138,23 +222,23 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                                 value = "";
                             }
                         }
-					}
+                    }
 
-					//an xmlnode can contain several CDATA nodes - the content of these will be concatanated.
-					if(_xmlReader.NodeType == XmlNodeType.CDATA || _xmlReader.NodeType == XmlNodeType.Text)
-					{
-						{
-							if(value != DBNull.Value)
-								value = value + _xmlReader.Value;
-						}
-					}
-					if(_xmlReader.NodeType == XmlNodeType.EndElement)
-					{
-						_nextRow.Add(key, value);
-						value = "";
-					}
-				}
-                foreach (ColumnMapping cm in _mapping.GetColumnMappings().Where(cm => cm != null && cm.Active && cm.SourceColumn != null))
+                    //an xmlnode can contain several CDATA nodes - the content of these will be concatanated.
+                    if (_xmlReader.NodeType == XmlNodeType.CDATA || _xmlReader.NodeType == XmlNodeType.Text)
+                    {
+                        {
+                            if (value != DBNull.Value)
+                                value = value + _xmlReader.Value;
+                        }
+                    }
+                    if (_xmlReader.NodeType == XmlNodeType.EndElement)
+                    {
+                        _nextRow.Add(key, value);
+                        value = "";
+                    }
+                }
+                foreach (ColumnMapping cm in _columnMappings.Where(cm => cm != null && cm.Active && cm.SourceColumn != null))
                 {
                     if (!_nextRow.ContainsKey(cm.SourceColumn.Name))
                     {
@@ -162,21 +246,22 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                     }
                 }
             }
-			catch(Exception ex)
-			{
-				string gottenResult = _nextRow.Aggregate("", (current, obj) => current + obj.Value.ToString() + ", ");
-				if(gottenResult != "")
-					gottenResult = gottenResult.Substring(0, gottenResult.Length - 2);
-				throw new Exception("Read from file failed. Partial read from table '" + _mapping.SourceTable.Name + "': " + gottenResult + ".", ex);
-			}
-
-		}
+            catch (Exception ex)
+            {
+                string gottenResult = _nextRow.Aggregate("", (current, obj) => current + obj.Value.ToString() + ", ");
+                if (gottenResult != "")
+                {
+                    gottenResult = gottenResult.Substring(0, gottenResult.Length - 2);
+                }
+                throw new Exception("Read from file failed. Partial read from table '" + _mapping.SourceTable.Name + "': " + gottenResult + ".", ex);
+            }
+        }
 
         private void ReplaceDecimalSeparator()
         {
             if (_autoDetectDecimalSeparator || !string.IsNullOrEmpty(_decimalSeparator))
             {
-                foreach (ColumnMapping cm in _mapping.GetColumnMappings())
+                foreach (ColumnMapping cm in _columnMappings)
                 {
                     if (cm.SourceColumn != null && _nextRow.ContainsKey(cm.SourceColumn.Name) && _nextRow[cm.SourceColumn.Name] != DBNull.Value && !cm.HasScriptWithValue &&
                         cm.DestinationColumn != null && (cm.DestinationColumn.Type == typeof(double) || cm.DestinationColumn.Type == typeof(float)))
@@ -200,15 +285,17 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                                 }
                             }
                         }
-                    }                        
+                    }
                 }
             }
         }
 
-		public void Dispose()
-		{
-			if(_xmlReader != null)
-				_xmlReader.Close();
-		}
-	}
+        public void Dispose()
+        {
+            if (_xmlReader != null)
+            {
+                _xmlReader.Close();
+            }
+        }
+    }
 }
