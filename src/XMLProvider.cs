@@ -232,7 +232,8 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
 
                 if (!Directory.Exists(srcFolderPath))
                 {
-                    throw new Exception("Source folder \"" + SourceFolder + "\" does not exist");
+                    Logger?.Error($"Source file {SourceFile} does not exist");
+                    return;
                 }
 
                 if (!string.IsNullOrEmpty(SourceFileFromUrl))
@@ -240,7 +241,8 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                     string filePath = srcFolderPath.CombinePaths(SourceFileFromUrl);
                     if (!File.Exists(filePath))
                     {
-                        throw new Exception("Source file from request \"" + filePath + "\" does not exist");
+                        Logger?.Error($"Source file from request {filePath} does not exist");
+                        return;
                     }
                 }
             }
@@ -250,7 +252,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
 
                 if (!File.Exists(srcFilePath))
                 {
-                    Logger?.Error("Source file \"" + SourceFile + "\" does not exist");
+                    Logger?.Error($"Source file {SourceFile} does not exist");
                 }
             }
 
@@ -419,7 +421,8 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
         {
             if (!string.IsNullOrEmpty(SourceFile) && !File.Exists(GetSourceFilePath()))
             {
-                throw new Exception("Source file \"" + SourceFile + "\" does not exist");
+                Logger?.Error($"Source file {SourceFile} does not exist");
+                return;
             }
             CheckSourceFilesChanging();
             if (ArchiveSourceFiles)
@@ -430,7 +433,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             {
                 if (File.Exists(f) && (new FileInfo(f).Length > XmlDeclarationLength))
                 {
-                    Logger.Log("reading configuration");
+                    Logger?.Log("reading configuration");
                     using (XmlReader configReader = XmlReader.Create(new StreamReader(f, true), new XmlReaderSettings() { CloseInput = true }))
                     {
                         while (configReader.Read())
@@ -712,9 +715,10 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             {
                 schemaReader.Skip();
                 if (schemaReader.NodeType == XmlNodeType.None)
-                    throw new XmlException("Unexpected EOF");
+                {
+                    Logger?.Error("Unexpected EOF");
+                }
             }
-
         }
 
         private void FillMappingOptions(string tablename, XmlReader schemaReader, Mapping mapping)
@@ -927,7 +931,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 {
                     if (map.Active)
                     {
-                        Logger.Log("Starting export of table: " + map.DestinationTable.Name);
+                        Logger?.Log("Starting export of table: " + map.DestinationTable.Name);
                         XmlWriter.WriteStartElement("table");
                         XmlWriter.WriteAttributeString("tableName", map.DestinationTable.Name);
 
@@ -947,12 +951,12 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                                 counter += 1;
 
                                 if (counter % 5000 == 0)
-                                    Logger.Log(counter + " rows exported to table: " + map.DestinationTable.Name);
+                                    Logger?.Log(counter + " rows exported to table: " + map.DestinationTable.Name);
                             }
                         }
 
                         XmlWriter.WriteEndElement();
-                        Logger.Log("Finished export of table: " + map.DestinationTable.Name);
+                        Logger?.Log("Finished export of table: " + map.DestinationTable.Name);
                     }
                 }
                 XmlWriter.WriteEndElement();
@@ -962,7 +966,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             }
             catch (EncoderFallbackException ex)
             {
-                Logger.Log("job failed: Encoding error - " + ex.Message);
+                Logger?.Error("job failed: Encoding error - " + ex.Message);
                 return false;
             }
             catch (Exception ex)
@@ -971,7 +975,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 LogManager.System.GetLogger(LogCategory.Application, "Dataintegration").Error($"{GetType().Name} error: {ex.Message} Stack: {ex.StackTrace}", ex);
                 if (sourceRow != null)
                     msg += GetFailedSourceRowMessage(sourceRow);
-                Logger.Log("job failed: " + msg);
+                Logger?.Error("job failed: " + msg);
                 return false;
             }
             finally
@@ -1042,14 +1046,20 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 string srcFolderPath = (WorkingDirectory.CombinePaths(SourceFolder)).Replace("\\", "/");
 
                 if (!Directory.Exists(srcFolderPath))
-                    throw new Exception("Source folder \"" + SourceFolder + "\" does not exist");
+                {
+                    Logger?.Error($"Source folder {SourceFolder} does not exist");
+                    return null;
+                }
             }
             else
             {
                 string srcFilePath = GetSourceFilePath();
 
                 if (!File.Exists(srcFilePath))
-                    throw new Exception("Source file \"" + this.SourceFile + "\" does not exist");
+                {
+                    Logger?.Error($"Source file {SourceFile} does not exist");
+                    return null;
+                }
             }
 
             FileInfo dstFi = null;
@@ -1202,7 +1212,10 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             }
 
             if (!File.Exists(destinationXmlFilePath))
-                throw new Exception("File missing: " + DestinationFile);
+            {
+                Logger?.Error($"File missing: {DestinationFile}");
+                return;
+            }
 
             using (StringWriter sw = new StringWriter())
             {
@@ -1217,8 +1230,8 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                     }
                     catch (Exception ex)
                     {
-                        Logger.Log($"Error loading xslt: {ex.Message}");
-                        throw;
+                        Logger?.Error($"Error loading xslt: {ex.Message}");
+                        return;
                     }
 
                     XmlWriterSettings writerSettings = oTransform.OutputSettings != null ? oTransform.OutputSettings.Clone() : new XmlWriterSettings();
@@ -1232,8 +1245,8 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                         }
                         catch (Exception ex)
                         {
-                            Logger.Log($"Error xml xslt transform: {ex.Message}");
-                            throw;
+                            Logger?.Error($"Error xml xslt transform: {ex.Message}");
+                            return;
                         }
                     }
                 }
@@ -1264,7 +1277,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             }
             catch (Exception ex)
             {
-                throw new Exception(string.Format("Error importing custom field '{0}' : {1}.", configReader.Name, ex.Message));
+                Logger?.Error(string.Format("Error importing custom field '{0}' : {1}.", configReader.Name, ex.Message));
             }
         }
 
@@ -1383,8 +1396,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 }
                 catch (Exception ex)
                 {
-                    if (Logger != null)
-                        Logger.Log(string.Format("Error getting culture: {0}.", ex.Message));
+                    Logger?.Error(string.Format("Error getting culture: {0}.", ex.Message));
                 }
             }
 
@@ -1417,7 +1429,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                     }
                     catch (Exception ex)
                     {
-                        Logger.Log(string.Format("Can't delete source file: {0}. Error: {1}", file, ex.Message));
+                        Logger?.Error(string.Format("Can't delete source file: {0}. Error: {1}", file, ex.Message));
                     }
                 }
             }
@@ -1460,12 +1472,12 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                         }
                         else
                         {
-                            Logger.Log(string.Format("Archive error: can't find directory for the source file: {0}.", file));
+                            Logger?.Log(string.Format("Archive error: can't find directory for the source file: {0}.", file));
                         }
                     }
                     catch (Exception ex)
                     {
-                        Logger.Log(string.Format("Can't archive source file: {0}. Error: {1}", file, ex.Message));
+                        Logger?.Log(string.Format("Can't archive source file: {0}. Error: {1}", file, ex.Message));
                     }
                 }
             }
@@ -1487,7 +1499,7 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
             IEnumerable<string> files = GetSourceFiles().Distinct();
             if (files != null && files.Count() > 0)
             {
-                Logger.Log("Start checking input files changing");
+                Logger?.Log("Start checking input files changing");
 
                 Dictionary<string, long> fileSizeDictionary = new Dictionary<string, long>();
                 foreach (string file in files)
@@ -1504,10 +1516,11 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                     FileInfo changedFileInfo = new FileInfo(file);
                     if (changedFileInfo != null && changedFileInfo.Length != fileSizeDictionary[file])
                     {
-                        throw new Exception(string.Format("Source file: '{0}' is still updating", file));
+                        Logger?.Log(string.Format("Source file: '{0}' is still updating", file));
+                        return;
                     }
                 }
-                Logger.Log("Finish checking input files changing");
+                Logger?.Log("Finish checking input files changing");
             }
         }
     }
