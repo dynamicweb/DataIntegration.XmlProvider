@@ -1042,14 +1042,20 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 string srcFolderPath = (WorkingDirectory.CombinePaths(SourceFolder)).Replace("\\", "/");
 
                 if (!Directory.Exists(srcFolderPath))
-                    throw new Exception("Source folder \"" + SourceFolder + "\" does not exist");
+                {
+                    Logger?.Error($"Source folder {SourceFolder} does not exist");
+                    return null;
+                }
             }
             else
             {
                 string srcFilePath = GetSourceFilePath();
 
                 if (!File.Exists(srcFilePath))
-                    throw new Exception("Source file \"" + this.SourceFile + "\" does not exist");
+                {
+                    Logger?.Error($"Source file {SourceFile} does not exist");
+                    return null;
+                }
             }
 
             FileInfo dstFi = null;
