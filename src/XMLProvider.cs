@@ -766,96 +766,115 @@ namespace Dynamicweb.DataIntegration.Providers.XmlProvider
                 switch (node.Name)
                 {
                     case "Encoding":
-                        switch (node.FirstChild.Value)
+                        if (node.HasChildNodes)
                         {
-                            case "Unicode":
-                                Encoding = Encoding.Unicode;
-                                break;
-                            case "Unicode (UTF-8)":
-                                Encoding = Encoding.UTF8;
-                                break;
-                            case "Unicode (UTF-32)":
-                                Encoding = Encoding.UTF32;
-                                break;
-                            case "US-ASCII":
-                            case "ASCII":
-                                Encoding = Encoding.ASCII;
-                                break;
-                            default:
-                                break;
+                            switch (node.FirstChild.Value)
+                            {
+                                case "Unicode":
+                                    Encoding = Encoding.Unicode;
+                                    break;
+                                case "Unicode (UTF-8)":
+                                    Encoding = Encoding.UTF8;
+                                    break;
+                                case "Unicode (UTF-32)":
+                                    Encoding = Encoding.UTF32;
+                                    break;
+                                case "US-ASCII":
+                                case "ASCII":
+                                    Encoding = Encoding.ASCII;
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
-
                         break;
                     case "Schema":
                         _schema = new Schema(node);
                         break;
                     case "SkipTroublesomeRows":
-                        SkipTroublesomeRows = node.FirstChild.Value == "True";
+                        if (node.HasChildNodes)
+                        {
+                            SkipTroublesomeRows = node.FirstChild.Value == "True";
+                        }
                         break;
                     case "ExportProductFieldDescriptions":
-                        ExportProductFieldDefinitions = node.FirstChild.Value == "True";
+                        if (node.HasChildNodes)
+                        {
+                            ExportProductFieldDefinitions = node.FirstChild.Value == "True";
+                        }
                         break;
                     case "Filename":
                         if (node.HasChildNodes)
+                        {
                             DestinationFile = node.FirstChild.Value;
-                        SourceFile = node.FirstChild.Value;
-
+                            SourceFile = node.FirstChild.Value;
+                        }
                         break;
                     case "DestinationFile":
+                        if (node.HasChildNodes)
                         {
-                            if (node.HasChildNodes)
-                                DestinationFile = node.FirstChild.Value;
-
-                            break;
+                            DestinationFile = node.FirstChild.Value;
                         }
+                        break;
                     case "SourceFile":
+                        if (node.HasChildNodes)
                         {
-                            if (node.HasChildNodes)
-                                SourceFile = node.FirstChild.Value;
-
-                            break;
+                            SourceFile = node.FirstChild.Value;
                         }
+                        break;
                     case "xslfile":
                         if (node.HasChildNodes)
+                        {
                             XslFile = node.FirstChild.Value;
+                        }
                         break;
                     case "DestinationXslfile":
                         if (node.HasChildNodes)
+                        {
                             DestinationXslFile = node.FirstChild.Value;
+                        }
                         break;
                     case "DestinationFolder":
+                        if (node.HasChildNodes)
                         {
-                            if (node.HasChildNodes)
-                                DestinationFolder = node.FirstChild.Value;
-
-                            break;
+                            DestinationFolder = node.FirstChild.Value;
                         }
+                        break;
                     case "SourceFolder":
+                        if (node.HasChildNodes)
                         {
-                            if (node.HasChildNodes)
-                                SourceFolder = node.FirstChild.Value;
-
-                            break;
+                            SourceFolder = node.FirstChild.Value;
                         }
+                        break;
                     case "SourceDecimalSeparator":
                         if (node.HasChildNodes)
+                        {
                             _sourceDecimalSeparator = node.FirstChild.Value;
+                        }
                         break;
                     case "ExportCultureInfo":
                         if (node.HasChildNodes)
+                        {
                             ExportCultureInfo = node.FirstChild.Value;
+                        }
                         break;
                     case "DeleteSourceFile":
                         if (node.HasChildNodes)
+                        {
                             DeleteSourceFile = node.FirstChild.Value == "True";
+                        }
                         break;
                     case "IncludeTimestampInFileName":
                         if (node.HasChildNodes)
+                        {
                             IncludeTimestampInFileName = node.FirstChild.Value == "True";
+                        }
                         break;
                     case "ArchiveSourceFiles":
                         if (node.HasChildNodes)
+                        {
                             ArchiveSourceFiles = node.FirstChild.Value == "True";
+                        }
                         break;
                 }
             }
