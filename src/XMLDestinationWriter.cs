@@ -72,13 +72,20 @@ class XmlDestinationWriter : IDestinationWriter
                         {
                             _xmlWriter.WriteCData(mapping.GetScriptValue());
                         }
-                        else if (p[mapping.SourceColumn.Name] is DBNull)
+                        else if (p[mapping.SourceColumn.Name] is DBNull || p[mapping.SourceColumn.Name] is null)
                         {
                             _xmlWriter.WriteAttributeString("isNull", "true");
                         }
                         else if (mapping.SourceColumn.Type == typeof(DateTime))
                         {
-                            _xmlWriter.WriteCData(Core.Converter.ToDateTime(p[mapping.SourceColumn.Name]).ToString("dd-MM-yyyy HH:mm:ss:fff"));
+                            if (DateTime.TryParse(p[mapping.SourceColumn.Name].ToString(), out var theDateTime))
+                            {
+                                _xmlWriter.WriteCData(theDateTime.ToString("dd-MM-yyyy HH:mm:ss:fff"));
+                            }
+                            else
+                            {
+                                _xmlWriter.WriteCData(DateTime.MinValue.ToString("dd-MM-yyyy HH:mm:ss:fff"));
+                            }
                         }
                         else if (_cultureInfo != null && (mapping.SourceColumn.Type == typeof(int) ||
                                 mapping.SourceColumn.Type == typeof(decimal) ||
