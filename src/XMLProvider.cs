@@ -277,17 +277,30 @@ public class XmlProvider : BaseProvider, IParameterOptions
         FilesFolderName = "Files";
         if (!string.IsNullOrEmpty(SourceFile))
         {
+            // Job created in DW 10:
+            // SourceFile = /Files/source.xml
+            // SourceFile = /Files/Integration/source.xml
+            // SourceFile = /EmailIcons/source.xml
+            var srcFilePath = WorkingDirectory.CombinePaths(SourceFile).Replace("\\", "/");
+            // Job created in DW9:
+            // SourceFile = source.xml
+            // SourceFile = Integration/source.xml
+            // SourceFile = ../EmailIcons/source.xml
+            if (SourceFile.StartsWith("..") || !SourceFile.StartsWith("/"))
+            {
+                srcFilePath = WorkingDirectory.CombinePaths(FilesFolderName, SourceFile).Replace("\\", "/");
+            }            
             //try to save the xml with its encoding
             XmlDocument doc = new XmlDocument();
             try
             {
-                doc.LoadXml(InputXML);
-                doc.Save(WorkingDirectory.CombinePaths(FilesFolderName, SourceFile));
+                doc.LoadXml(InputXML);                                
+                doc.Save(srcFilePath);
             }
             catch (Exception)
             {
                 //if it is not correct xml - save without encoding
-                TextFileHelper.WriteTextFile(InputXML, WorkingDirectory.CombinePaths(FilesFolderName, SourceFile));
+                TextFileHelper.WriteTextFile(InputXML, srcFilePath);
             }
         }
     }
