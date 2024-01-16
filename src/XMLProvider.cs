@@ -273,23 +273,10 @@ public class XmlProvider : BaseProvider, IParameterOptions
     }
     public void WriteToSourceFile(string InputXML)
     {
-        WorkingDirectory = SystemInformation.MapPath("/Files/");
-        FilesFolderName = "Files";
-        if (!string.IsNullOrEmpty(SourceFile))
-        {
-            // Job created in DW 10:
-            // SourceFile = /Files/source.xml
-            // SourceFile = /Files/Integration/source.xml
-            // SourceFile = /EmailIcons/source.xml
-            var srcFilePath = WorkingDirectory.CombinePaths(SourceFile).Replace("\\", "/");
-            // Job created in DW9:
-            // SourceFile = source.xml
-            // SourceFile = Integration/source.xml
-            // SourceFile = ../EmailIcons/source.xml
-            if (SourceFile.StartsWith("..") || !SourceFile.StartsWith("/"))
-            {
-                srcFilePath = WorkingDirectory.CombinePaths(FilesFolderName, SourceFile).Replace("\\", "/");
-            }            
+        WorkingDirectory = SystemInformation.MapPath("/Files/");        
+        var srcFilePath = GetSourceFilePath();
+        if (!string.IsNullOrEmpty(srcFilePath))
+        {                        
             //try to save the xml with its encoding
             XmlDocument doc = new XmlDocument();
             try
@@ -365,17 +352,20 @@ public class XmlProvider : BaseProvider, IParameterOptions
     }
 
     private string GetSourceFilePath()
-    {
-        string srcFilePath = string.Empty;
-
-        if (_sourceFileName.StartsWith(".."))
-        {
-            srcFilePath = WorkingDirectory.CombinePaths(_sourceFileName.TrimStart(new char[] { '.' })).Replace("\\", "/");
-        }
-        else
-        {
-            srcFilePath = WorkingDirectory.CombinePaths(FilesFolderName, _sourceFileName).Replace("\\", "/");
-        }
+    {        
+        // Job created in DW 10:
+        // SourceFile = /Files/source.xml
+        // SourceFile = /Files/Integration/source.xml
+        // SourceFile = /EmailIcons/source.xml
+        var srcFilePath = WorkingDirectory.CombinePaths(SourceFile).Replace("\\", "/");
+        // Job created in DW9:
+        // SourceFile = source.xml
+        // SourceFile = Integration/source.xml
+        // SourceFile = ../EmailIcons/source.xml
+        if (SourceFile.StartsWith("..") || !SourceFile.StartsWith("/"))
+        {            
+            srcFilePath = WorkingDirectory.CombinePaths(string.IsNullOrWhiteSpace(FilesFolderName) ? "Files" : FilesFolderName, SourceFile).Replace("\\", "/");
+        }                
 
         return srcFilePath;
     }
@@ -1170,7 +1160,7 @@ public class XmlProvider : BaseProvider, IParameterOptions
                 break;
             }
         }
-        while (tableName != map.SourceTable.Name)
+        while (tableName != map.SourceTable?.Name)
         {
             _xmlReader.MoveToElement();
             _xmlReader.Skip();
