@@ -351,24 +351,11 @@ public class XmlProvider : BaseProvider, IParameterOptions
         return null;
     }
 
-    private string GetSourceFilePath()
-    {        
-        // Job created in DW 10:
-        // SourceFile = /Files/source.xml
-        // SourceFile = /Files/Integration/source.xml
-        // SourceFile = /EmailIcons/source.xml
-        var srcFilePath = WorkingDirectory.CombinePaths(SourceFile).Replace("\\", "/");
-        // Job created in DW9:
-        // SourceFile = source.xml
-        // SourceFile = Integration/source.xml
-        // SourceFile = ../EmailIcons/source.xml
-        if (SourceFile.StartsWith("..") || !SourceFile.StartsWith("/"))
-        {            
-            srcFilePath = WorkingDirectory.CombinePaths(string.IsNullOrWhiteSpace(FilesFolderName) ? "Files" : FilesFolderName, SourceFile).Replace("\\", "/");
-        }                
-
-        return srcFilePath;
-    }
+    // When Job is created in DW 10 SourceFile can be set to the path like that:
+    //  /Files/source.xml
+    //  /Files/Integration/source.xml
+    //  /EmailIcons/source.xml
+    private string GetSourceFilePath() => WorkingDirectory.CombinePaths(SourceFile).Replace("\\", "/");
 
     public override string ValidateDestinationSettings()
     {
