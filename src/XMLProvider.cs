@@ -273,21 +273,21 @@ public class XmlProvider : BaseProvider, IParameterOptions
     }
     public void WriteToSourceFile(string InputXML)
     {
-        WorkingDirectory = SystemInformation.MapPath("/Files/");
-        FilesFolderName = "Files";
-        if (!string.IsNullOrEmpty(SourceFile))
-        {
+        WorkingDirectory = SystemInformation.MapPath("/Files/");        
+        var srcFilePath = GetSourceFilePath();
+        if (!string.IsNullOrEmpty(srcFilePath))
+        {                        
             //try to save the xml with its encoding
             XmlDocument doc = new XmlDocument();
             try
             {
-                doc.LoadXml(InputXML);
-                doc.Save(WorkingDirectory.CombinePaths(FilesFolderName, SourceFile));
+                doc.LoadXml(InputXML);                                
+                doc.Save(srcFilePath);
             }
             catch (Exception)
             {
                 //if it is not correct xml - save without encoding
-                TextFileHelper.WriteTextFile(InputXML, WorkingDirectory.CombinePaths(FilesFolderName, SourceFile));
+                TextFileHelper.WriteTextFile(InputXML, srcFilePath);
             }
         }
     }
@@ -351,21 +351,11 @@ public class XmlProvider : BaseProvider, IParameterOptions
         return null;
     }
 
-    private string GetSourceFilePath()
-    {
-        string srcFilePath = string.Empty;
-
-        if (_sourceFileName.StartsWith(".."))
-        {
-            srcFilePath = WorkingDirectory.CombinePaths(_sourceFileName.TrimStart(new char[] { '.' })).Replace("\\", "/");
-        }
-        else
-        {
-            srcFilePath = WorkingDirectory.CombinePaths(FilesFolderName, _sourceFileName).Replace("\\", "/");
-        }
-
-        return srcFilePath;
-    }
+    // When Job is created in DW 10 SourceFile can be set to the path like that:
+    //  /Files/source.xml
+    //  /Files/Integration/source.xml
+    //  /EmailIcons/source.xml
+    private string GetSourceFilePath() => WorkingDirectory.CombinePaths(SourceFile).Replace("\\", "/");
 
     public override string ValidateDestinationSettings()
     {
@@ -1157,7 +1147,7 @@ public class XmlProvider : BaseProvider, IParameterOptions
                 break;
             }
         }
-        while (tableName != map.SourceTable.Name)
+        while (tableName != map.SourceTable?.Name)
         {
             _xmlReader.MoveToElement();
             _xmlReader.Skip();
