@@ -16,6 +16,7 @@ class XmlDestinationWriter : IDestinationWriter
     private readonly bool _skipTroublesomeRows;
     private readonly CultureInfo _cultureInfo;
     private readonly ILogger _logger;
+    private readonly ColumnMappingCollection _columnMappingCollection;
 
     public Mapping Mapping { get; }
 
@@ -26,6 +27,7 @@ class XmlDestinationWriter : IDestinationWriter
         _xmlWriter = xmlWriter;
         _skipTroublesomeRows = skipTroublesomeRows;
         _cultureInfo = cultureInfo;
+        _columnMappingCollection = Mapping.GetColumnMappings();
     }
 
     public void Write(Dictionary<string, object> p)
@@ -56,10 +58,8 @@ class XmlDestinationWriter : IDestinationWriter
 
             _xmlWriter.WriteStartElement("item");
             _xmlWriter.WriteAttributeString("table", Mapping.DestinationTable.Name);
-            for (int i = 0; i < Mapping.GetColumnMappings().Count; i++)
+            foreach (var mapping in _columnMappingCollection)
             {
-                var mapping = Mapping.GetColumnMappings()[i];
-
                 if (mapping.Active)
                 {
                     if (p.ContainsKey(mapping.SourceColumn.Name))
