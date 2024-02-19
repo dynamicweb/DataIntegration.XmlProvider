@@ -58,7 +58,7 @@ public class XmlProvider : BaseProvider, IParameterOptions
         }
     }
 
-    [AddInParameter("Source folder"), AddInParameterEditor(typeof(FolderSelectEditor), "folder=/Files/"), AddInParameterGroup("Source")]
+    [AddInParameter("Source folder"), AddInParameterEditor(typeof(FolderSelectEditor), ""), AddInParameterGroup("Source")]
     public string SourceFolder
     {
         get
@@ -67,7 +67,7 @@ public class XmlProvider : BaseProvider, IParameterOptions
         { _sourceFolder = value; }
     }
 
-    [AddInParameter("Source file"), AddInParameterEditor(typeof(FileManagerEditor), "folder=/Files/;Tooltip=Selecting a source file will override source folder selection"), AddInParameterGroup("Source")]
+    [AddInParameter("Source file"), AddInParameterEditor(typeof(FileManagerEditor), "Tooltip=Selecting a source file will override source folder selection"), AddInParameterGroup("Source")]
     public string SourceFile
     {
         get
@@ -83,10 +83,10 @@ public class XmlProvider : BaseProvider, IParameterOptions
     [AddInParameter("Delete source file"), AddInParameterEditor(typeof(YesNoParameterEditor), ""), AddInParameterGroup("Source")]
     public bool DeleteSourceFile { get; set; }
 
-    [AddInParameter("XSL file"), AddInParameterEditor(typeof(FileManagerEditor), "folder=/Files/;extensions=xsl,xslt"), AddInParameterGroup("Source")]
+    [AddInParameter("XSL file"), AddInParameterEditor(typeof(FileManagerEditor), "extensions=xsl,xslt"), AddInParameterGroup("Source")]
     public string XslFile { get; set; }
 
-    [AddInParameter("Destination XSL file"), AddInParameterEditor(typeof(FileManagerEditor), "folder=/Files/;extensions=xsl,xslt"), AddInParameterGroup("Destination")]
+    [AddInParameter("Destination XSL file"), AddInParameterEditor(typeof(FileManagerEditor), "extensions=xsl,xslt"), AddInParameterGroup("Destination")]
     public string DestinationXslFile { get; set; }
 
     public override bool SchemaIsEditable
@@ -113,7 +113,7 @@ public class XmlProvider : BaseProvider, IParameterOptions
         }
     }
 
-    [AddInParameter("Destination folder"), AddInParameterEditor(typeof(FolderSelectEditor), "folder=/Files/"), AddInParameterGroup("Destination")]
+    [AddInParameter("Destination folder"), AddInParameterEditor(typeof(FolderSelectEditor), ""), AddInParameterGroup("Destination")]
     public string DestinationFolder
     {
         get
