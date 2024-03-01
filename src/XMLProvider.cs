@@ -273,15 +273,15 @@ public class XmlProvider : BaseProvider, IParameterOptions
     }
     public void WriteToSourceFile(string InputXML)
     {
-        WorkingDirectory = SystemInformation.MapPath("/Files/");        
+        WorkingDirectory = SystemInformation.MapPath("/Files/");
         var srcFilePath = GetSourceFilePath();
         if (!string.IsNullOrEmpty(srcFilePath))
-        {                        
+        {
             //try to save the xml with its encoding
             XmlDocument doc = new XmlDocument();
             try
             {
-                doc.LoadXml(InputXML);                                
+                doc.LoadXml(InputXML);
                 doc.Save(srcFilePath);
             }
             catch (Exception)
@@ -588,25 +588,25 @@ public class XmlProvider : BaseProvider, IParameterOptions
                 try
                 {
                     schemaReader = XmlReader.Create(new StreamReader(f, true), new XmlReaderSettings() { CloseInput = true });
+                    if (schemaReader != null)
+                    {
+                        using (schemaReader)
+                        {
+                            while (schemaReader.Read())
+                            {
+                                if (schemaReader.NodeType == XmlNodeType.Element && schemaReader.Name.ToLower() == "tables")
+                                {
+                                    while (schemaReader.Read() && !(schemaReader.NodeType == XmlNodeType.EndElement && schemaReader.Name.ToLower() == "tables"))
+                                        if (schemaReader.NodeType == XmlNodeType.Element && schemaReader.Name.ToLower() == "table")
+                                            AddTableToSchema(result, schemaReader);
+                                }
+                            }
+                        }
+                    }
                 }
                 catch (Exception ex)
                 {
                     Logger?.Error(string.Format("GetOriginalSourceSchema error reading file: {0} message: {1} stack: {2}", f, ex.Message, ex.StackTrace));
-                }
-                if (schemaReader != null)
-                {
-                    using (schemaReader)
-                    {
-                        while (schemaReader.Read())
-                        {
-                            if (schemaReader.NodeType == XmlNodeType.Element && schemaReader.Name.ToLower() == "tables")
-                            {
-                                while (schemaReader.Read() && !(schemaReader.NodeType == XmlNodeType.EndElement && schemaReader.Name.ToLower() == "tables"))
-                                    if (schemaReader.NodeType == XmlNodeType.Element && schemaReader.Name.ToLower() == "table")
-                                        AddTableToSchema(result, schemaReader);
-                            }
-                        }
-                    }
                 }
             }
         }
