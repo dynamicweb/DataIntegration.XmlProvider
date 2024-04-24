@@ -503,7 +503,7 @@ public class XmlProvider : BaseProvider, IParameterOptions
                 }
                 else
                 {
-                    files = Directory.EnumerateFiles(srcPath, XmlExtension, SearchOption.TopDirectoryOnly).OrderBy(fileName => fileName);
+                    files = Directory.EnumerateFiles(srcPath, "*" + XmlExtension, SearchOption.TopDirectoryOnly).OrderBy(fileName => fileName);
                 }
             }
         }
