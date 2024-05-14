@@ -32,30 +32,29 @@ class XmlSourceReader : ISourceReader
     {
         if (_xmlReader != null)
         {
-            while (_xmlReader.Read())
+            do
             {
-                if (_xmlReader.NodeType == XmlNodeType.Element && _xmlReader.Name == "item")
+                while (_xmlReader.Read())
                 {
-                    break;
+                    if (_xmlReader.NodeType == XmlNodeType.Element && _xmlReader.Name == "item")
+                    {
+                        break;
+                    }
+                    else if ((_xmlReader.NodeType == XmlNodeType.EndElement && (_xmlReader.Name == "table" || _xmlReader.Name == "tables")) || (_xmlReader.NodeType == XmlNodeType.Element && _xmlReader.Name == "table"))
+                    {
+                        _xmlReader.Close();
+                        return true;
+                    }
+
                 }
-                else if ((_xmlReader.NodeType == XmlNodeType.EndElement && (_xmlReader.Name == "table" || _xmlReader.Name == "tables")) || (_xmlReader.NodeType == XmlNodeType.Element && _xmlReader.Name == "table"))
-                {
-                    _xmlReader.Close();
-                    return true;
-                }
 
+                SetNextRow();
+
+                ReplaceDecimalSeparator();
             }
+            while (!RowMatchesConditions());
 
-            SetNextRow();
-
-            ReplaceDecimalSeparator();
-
-            if (RowMatchesConditions())
-            {
-                return false;
-            }
-
-            return IsDone();
+            return false;
         }
         else
         {
