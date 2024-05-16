@@ -18,6 +18,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Xsl;
+using Tavis.UriTemplates;
 
 namespace Dynamicweb.DataIntegration.Providers.XmlProvider;
 
@@ -1362,7 +1363,15 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
 
     private CultureInfo GetCultureInfo()
     {
-        return CultureInfo.GetCultureInfo(ExportCultureInfo) ?? CultureInfo.CurrentCulture;
+        try
+        {
+            return string.IsNullOrWhiteSpace(ExportCultureInfo) ? CultureInfo.CurrentCulture : CultureInfo.GetCultureInfo(ExportCultureInfo);
+        }
+        catch (CultureNotFoundException ex)
+        {
+            Logger?.Log(string.Format("Error getting culture: {0}. Using {1} instead", ex.Message, CultureInfo.CurrentCulture.Name));
+        }
+        return CultureInfo.CurrentCulture;
     }
 
     private void DeleteSourceFiles()
