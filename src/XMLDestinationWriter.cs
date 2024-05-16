@@ -4,6 +4,7 @@ using Dynamicweb.DataIntegration.ProviderHelpers;
 using Dynamicweb.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -67,10 +68,24 @@ class XmlDestinationWriter : IDestinationWriter
                         _xmlWriter.WriteStartElement("column");
                         _xmlWriter.WriteAttributeString("columnName", mapping.DestinationColumn.Name);
 
-                        if (mapping.HasScriptWithValue ||
-                            (mapping.SourceColumn == null && mapping.ScriptType != ScriptType.None)) //in case when "None" selected as a SourceColumn                                
+                        if (mapping.HasScriptWithValue)
                         {
-                            _xmlWriter.WriteCData(mapping.GetScriptValue());
+                            if (mapping.SourceColumn.Type == typeof(DateTime))
+                            {
+                                DateTime theDate = DateTime.Parse(mapping.GetScriptValue());
+                                _xmlWriter.WriteCData(theDate.ToString("dd-MM-yyyy HH:mm:ss:fff", _cultureInfo));
+                            }
+                            else if (mapping.SourceColumn.Type == typeof(decimal) ||
+                                mapping.SourceColumn.Type == typeof(double) ||
+                                mapping.SourceColumn.Type == typeof(float))
+                            {
+                                string value = ValueFormatter.GetFormattedValue(mapping.GetScriptValue(), _cultureInfo, mapping.ScriptType, mapping.ScriptValue);
+                                _xmlWriter.WriteCData(value);
+                            }
+                            else
+                            {
+                                _xmlWriter.WriteCData(mapping.GetScriptValue());
+                            }
                         }
                         else if (p[mapping.SourceColumn.Name] is DBNull || p[mapping.SourceColumn.Name] is null)
                         {
@@ -78,38 +93,18 @@ class XmlDestinationWriter : IDestinationWriter
                         }
                         else if (mapping.SourceColumn.Type == typeof(DateTime))
                         {
-                            if (DateTime.TryParse(p[mapping.SourceColumn.Name].ToString(), out var theDateTime))
+                            if (DateTime.TryParse(mapping.ConvertInputValueToOutputValue(p[mapping.SourceColumn.Name])?.ToString(), out var theDateTime))
                             {
-                                _xmlWriter.WriteCData(theDateTime.ToString("dd-MM-yyyy HH:mm:ss:fff"));
+                                _xmlWriter.WriteCData(theDateTime.ToString("dd-MM-yyyy HH:mm:ss:fff", _cultureInfo));
                             }
                             else
                             {
-                                _xmlWriter.WriteCData(DateTime.MinValue.ToString("dd-MM-yyyy HH:mm:ss:fff"));
+                                _xmlWriter.WriteCData(DateTime.MinValue.ToString("dd-MM-yyyy HH:mm:ss:fff", CultureInfo.InvariantCulture));
                             }
-                        }
-                        else if (_cultureInfo != null && (mapping.SourceColumn.Type == typeof(int) ||
-                                mapping.SourceColumn.Type == typeof(decimal) ||
-                                mapping.SourceColumn.Type == typeof(double) ||
-                                mapping.SourceColumn.Type == typeof(float)))
-                        {
-                            string value = ValueFormatter.GetFormattedValue(p[mapping.SourceColumn.Name], _cultureInfo,
-                                mapping.ScriptType, mapping.ScriptValue);
-                            _xmlWriter.WriteCData(value);
                         }
                         else
                         {
-                            switch (mapping.ScriptType)
-                            {
-                                case ScriptType.Append:
-                                    _xmlWriter.WriteCData(p[mapping.SourceColumn.Name].ToString() + mapping.ScriptValue);
-                                    break;
-                                case ScriptType.Prepend:
-                                    _xmlWriter.WriteCData(mapping.ScriptValue + p[mapping.SourceColumn.Name].ToString());
-                                    break;
-                                case ScriptType.None:
-                                    _xmlWriter.WriteCData(p[mapping.SourceColumn.Name].ToString());
-                                    break;
-                            }
+                            _xmlWriter.WriteCData(string.Format(_cultureInfo, "{0}", mapping.ConvertInputValueToOutputValue(p[mapping.SourceColumn.Name])));
                         }
                         _xmlWriter.WriteEndElement();
                     }

@@ -18,11 +18,12 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Xsl;
+using Tavis.UriTemplates;
 
 namespace Dynamicweb.DataIntegration.Providers.XmlProvider;
 
 [AddInName("Dynamicweb.DataIntegration.Providers.Provider"), AddInLabel("XML Provider"), AddInDescription("XML provider"), AddInIgnore(false)]
-public class XmlProvider : BaseProvider, IParameterOptions
+public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOptions
 {
     private Schema _schema;
     private XmlWriter _xmlWriter;
@@ -143,8 +144,8 @@ public class XmlProvider : BaseProvider, IParameterOptions
     [AddInParameter("Export Product Field Definitions"), AddInParameterEditor(typeof(YesNoParameterEditor), ""), AddInParameterGroup("Destination")]
     public bool ExportProductFieldDefinitions { get; set; }
 
-    [AddInParameter("Number format culture"), AddInParameterEditor(typeof(DropDownParameterEditor), "none=true"), AddInParameterGroup("Destination")]
-    public string ExportCultureInfo { get; set; }
+    [AddInParameter("Destination format culture"), AddInParameterEditor(typeof(DropDownParameterEditor), "none=false"), AddInParameterGroup("Destination")]
+    public string ExportCultureInfo { get; set; } = CultureInfo.CurrentCulture.Name;
 
     private readonly string DetectAutomaticallySeparator = "Detect automatically";
     private readonly string NoneDecimalSeparator = "Use system culture";
@@ -549,28 +550,28 @@ public class XmlProvider : BaseProvider, IParameterOptions
     public override void UpdateSourceSettings(ISource source)
     {
         XmlProvider newProvider = (XmlProvider)source;
-        SkipTroublesomeRows = newProvider.SkipTroublesomeRows;
         SourceFolder = newProvider.SourceFolder;
         SourceFile = newProvider.SourceFile;
         DeleteSourceFile = newProvider.DeleteSourceFile;
-        DestinationFile = newProvider.DestinationFile;
-        ExportProductFieldDefinitions = newProvider.ExportProductFieldDefinitions;
-        Encoding = newProvider.Encoding;
         XslFile = newProvider.XslFile;
-        DestionationEncoding = newProvider.DestionationEncoding;
-        DestinationFolder = newProvider.DestinationFolder;
-        DestinationXslFile = newProvider.DestinationXslFile;
         SourceDecimalSeparator = newProvider.SourceDecimalSeparator;
-        ExportCultureInfo = newProvider.ExportCultureInfo;
-        IncludeTimestampInFileName = newProvider.IncludeTimestampInFileName;
         ArchiveSourceFiles = newProvider.ArchiveSourceFiles;
     }
 
     public override void UpdateDestinationSettings(IDestination destination)
     {
-        ISource newProvider = (ISource)destination;
-        UpdateSourceSettings(newProvider);
+        XmlProvider newProvider = (XmlProvider)destination;
+        SkipTroublesomeRows = newProvider.SkipTroublesomeRows;
+        DestinationFile = newProvider.DestinationFile;
+        ExportProductFieldDefinitions = newProvider.ExportProductFieldDefinitions;
+        Encoding = newProvider.Encoding;
+        DestionationEncoding = newProvider.DestionationEncoding;
+        DestinationFolder = newProvider.DestinationFolder;
+        DestinationXslFile = newProvider.DestinationXslFile;
+        ExportCultureInfo = newProvider.ExportCultureInfo;
+        IncludeTimestampInFileName = newProvider.IncludeTimestampInFileName;
     }
+
     Schema schemaFromDisk;
     public override Schema GetOriginalSourceSchema()
     {
@@ -626,7 +627,7 @@ public class XmlProvider : BaseProvider, IParameterOptions
 
     public override Schema GetOriginalDestinationSchema()
     {
-        return GetSchema();
+        return _schema = new Schema();
     }
 
     public override void OverwriteSourceSchemaToOriginal()
@@ -636,13 +637,18 @@ public class XmlProvider : BaseProvider, IParameterOptions
 
     public override void OverwriteDestinationSchemaToOriginal()
     {
+        _schema = new Schema();
     }
 
-    public override Schema GetSchema()
+    Schema IDestination.GetSchema()
     {
-        if (_schema == null)
-            _schema = GetOriginalSourceSchema();
+        _schema ??= new Schema();
+        return _schema;
+    }
 
+    Schema ISource.GetSchema()
+    {
+        _schema ??= GetOriginalSourceSchema();
         return _schema;
     }
 
@@ -663,7 +669,7 @@ public class XmlProvider : BaseProvider, IParameterOptions
         root.Add(CreateParameterNode(GetType(), "Destination folder", DestinationFolder));
         root.Add(CreateParameterNode(GetType(), "Destination XSL file", DestinationXslFile));
         root.Add(CreateParameterNode(GetType(), "Source decimal separator", _sourceDecimalSeparator));
-        root.Add(CreateParameterNode(GetType(), "Number format culture", ExportCultureInfo));
+        root.Add(CreateParameterNode(GetType(), "Destination format culture", ExportCultureInfo));
         root.Add(CreateParameterNode(GetType(), "Include timestamp in filename", IncludeTimestampInFileName.ToString()));
         root.Add(CreateParameterNode(GetType(), "Archive source files", ArchiveSourceFiles.ToString()));
         return document.ToString();
@@ -896,23 +902,28 @@ public class XmlProvider : BaseProvider, IParameterOptions
         DeleteArchievedFiles();
     }
 
-    public override void SaveAsXml(XmlTextWriter textWriter)
+    void ISource.SaveAsXml(XmlTextWriter textWriter)
     {
-        textWriter.WriteElementString("DestinationFile", DestinationFile);
         textWriter.WriteElementString("SourceFile", SourceFile);
         textWriter.WriteElementString("xslfile", XslFile);
+        textWriter.WriteElementString("SourceFolder", SourceFolder);
+        textWriter.WriteElementString("SourceDecimalSeparator", _sourceDecimalSeparator);
+        textWriter.WriteElementString("DeleteSourceFile", DeleteSourceFile.ToString());
+        textWriter.WriteElementString("ArchiveSourceFiles", ArchiveSourceFiles.ToString());
+        (this as ISource).GetSchema().SaveAsXml(textWriter);
+    }
+
+    void IDestination.SaveAsXml(XmlTextWriter textWriter)
+    {
+        textWriter.WriteElementString("DestinationFile", DestinationFile);
         textWriter.WriteElementString("Encoding", Encoding.EncodingName);
         textWriter.WriteElementString("SkipTroublesomeRows", SkipTroublesomeRows.ToString());
         textWriter.WriteElementString("ExportProductFieldDescriptions", ExportProductFieldDefinitions.ToString());
-        textWriter.WriteElementString("SourceFolder", SourceFolder);
         textWriter.WriteElementString("DestinationFolder", DestinationFolder);
         textWriter.WriteElementString("DestinationXslfile", DestinationXslFile);
-        textWriter.WriteElementString("SourceDecimalSeparator", _sourceDecimalSeparator);
         textWriter.WriteElementString("ExportCultureInfo", ExportCultureInfo);
-        textWriter.WriteElementString("DeleteSourceFile", DeleteSourceFile.ToString());
         textWriter.WriteElementString("IncludeTimestampInFileName", IncludeTimestampInFileName.ToString());
-        textWriter.WriteElementString("ArchiveSourceFiles", ArchiveSourceFiles.ToString());
-        GetSchema().SaveAsXml(textWriter);
+        (this as IDestination).GetSchema().SaveAsXml(textWriter);
     }
 
     public override bool RunJob(Job job)
@@ -1352,22 +1363,15 @@ public class XmlProvider : BaseProvider, IParameterOptions
 
     private CultureInfo GetCultureInfo()
     {
-        CultureInfo result = null;
-
-        if (!string.IsNullOrEmpty(ExportCultureInfo))
+        try
         {
-            try
-            {
-                result = CultureInfo.GetCultureInfo(ExportCultureInfo);
-            }
-            catch (Exception ex)
-            {
-                if (Logger != null)
-                    Logger.Log(string.Format("Error getting culture: {0}.", ex.Message));
-            }
+            return string.IsNullOrWhiteSpace(ExportCultureInfo) ? CultureInfo.CurrentCulture : CultureInfo.GetCultureInfo(ExportCultureInfo);
         }
-
-        return result;
+        catch (CultureNotFoundException ex)
+        {
+            Logger?.Log(string.Format("Error getting culture: {0}. Using {1} instead", ex.Message, CultureInfo.CurrentCulture.Name));
+        }
+        return CultureInfo.CurrentCulture;
     }
 
     private void DeleteSourceFiles()
@@ -1501,10 +1505,9 @@ public class XmlProvider : BaseProvider, IParameterOptions
                     new(".", "."),
                     new(",", ",")
                 },
-            "Number format culture" => Ecommerce.Services.Countries.GetCountries()
-                    .Where(c => !string.IsNullOrEmpty(c.CultureInfo))
-                    .DistinctBy(c => c.CultureInfo)
-                    .Select(c => new ParameterOption(c.Code2, c.CultureInfo)),
+            "Destination format culture" => CultureInfo.GetCultures(CultureTypes.SpecificCultures)
+                .Where(obj => !string.IsNullOrEmpty(obj.Name))
+                .Select(c => new ParameterOption(c.DisplayName, c.Name)),
             _ => new List<ParameterOption>()
                 {
                     new("UTF8", "Unicode (UTF-8)"),
