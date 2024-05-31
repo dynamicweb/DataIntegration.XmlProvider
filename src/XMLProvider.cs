@@ -18,7 +18,6 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Xsl;
-using Tavis.UriTemplates;
 
 namespace Dynamicweb.DataIntegration.Providers.XmlProvider;
 
@@ -144,8 +143,8 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
     [AddInParameter("Export Product Field Definitions"), AddInParameterEditor(typeof(YesNoParameterEditor), ""), AddInParameterGroup("Destination")]
     public bool ExportProductFieldDefinitions { get; set; }
 
-    [AddInParameter("Destination format culture"), AddInParameterEditor(typeof(DropDownParameterEditor), "none=false"), AddInParameterGroup("Destination")]
-    public string ExportCultureInfo { get; set; } = CultureInfo.CurrentCulture.Name;
+    [Obsolete("Use job.Culture")]
+    public string ExportCultureInfo { get; set; }
 
     private readonly string DetectAutomaticallySeparator = "Detect automatically";
     private readonly string NoneDecimalSeparator = "Use system culture";
@@ -568,7 +567,6 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
         DestionationEncoding = newProvider.DestionationEncoding;
         DestinationFolder = newProvider.DestinationFolder;
         DestinationXslFile = newProvider.DestinationXslFile;
-        ExportCultureInfo = newProvider.ExportCultureInfo;
         IncludeTimestampInFileName = newProvider.IncludeTimestampInFileName;
     }
 
@@ -669,7 +667,6 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
         root.Add(CreateParameterNode(GetType(), "Destination folder", DestinationFolder));
         root.Add(CreateParameterNode(GetType(), "Destination XSL file", DestinationXslFile));
         root.Add(CreateParameterNode(GetType(), "Source decimal separator", _sourceDecimalSeparator));
-        root.Add(CreateParameterNode(GetType(), "Destination format culture", ExportCultureInfo));
         root.Add(CreateParameterNode(GetType(), "Include timestamp in filename", IncludeTimestampInFileName.ToString()));
         root.Add(CreateParameterNode(GetType(), "Archive source files", ArchiveSourceFiles.ToString()));
         return document.ToString();
@@ -846,12 +843,6 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
                         _sourceDecimalSeparator = node.FirstChild.Value;
                     }
                     break;
-                case "ExportCultureInfo":
-                    if (node.HasChildNodes)
-                    {
-                        ExportCultureInfo = node.FirstChild.Value;
-                    }
-                    break;
                 case "DeleteSourceFile":
                     if (node.HasChildNodes)
                     {
@@ -921,7 +912,6 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
         textWriter.WriteElementString("ExportProductFieldDescriptions", ExportProductFieldDefinitions.ToString());
         textWriter.WriteElementString("DestinationFolder", DestinationFolder);
         textWriter.WriteElementString("DestinationXslfile", DestinationXslFile);
-        textWriter.WriteElementString("ExportCultureInfo", ExportCultureInfo);
         textWriter.WriteElementString("IncludeTimestampInFileName", IncludeTimestampInFileName.ToString());
         (this as IDestination).GetSchema().SaveAsXml(textWriter);
     }
@@ -939,7 +929,7 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
             if (ExportProductFieldDefinitions)
                 writeProductFieldDescriptions();
 
-            CultureInfo ci = GetCultureInfo();
+            CultureInfo ci = GetCultureInfo(job.Culture);
 
             foreach (Mapping map in job.Mappings)
             {
@@ -1361,11 +1351,11 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
 
     #endregion Import Custom Fields
 
-    private CultureInfo GetCultureInfo()
+    private CultureInfo GetCultureInfo(string culture)
     {
         try
         {
-            return string.IsNullOrWhiteSpace(ExportCultureInfo) ? CultureInfo.CurrentCulture : CultureInfo.GetCultureInfo(ExportCultureInfo);
+            return string.IsNullOrWhiteSpace(culture) ? CultureInfo.CurrentCulture : CultureInfo.GetCultureInfo(culture);
         }
         catch (CultureNotFoundException ex)
         {
@@ -1505,9 +1495,6 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
                     new(".", "."),
                     new(",", ",")
                 },
-            "Destination format culture" => CultureInfo.GetCultures(CultureTypes.SpecificCultures)
-                .Where(obj => !string.IsNullOrEmpty(obj.Name))
-                .Select(c => new ParameterOption(c.DisplayName, c.Name)),
             _ => new List<ParameterOption>()
                 {
                     new("UTF8", "Unicode (UTF-8)"),
