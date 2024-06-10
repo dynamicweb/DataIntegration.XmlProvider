@@ -8,6 +8,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Xml;
 
 namespace Dynamicweb.DataIntegration.Providers.XmlProvider;
 
@@ -132,13 +133,23 @@ class XmlDestinationWriter : IDestinationWriter
     }
 
     /// <summary>
-    /// Removes control characters and other non-UTF-8 characters
+    /// Checks if the inString can be converted to Xml
     /// </summary>
     /// <param name="inString">The string to process</param>
-    /// <returns>A string with no control characters or entities above 0x00FD</returns>
+    /// <returns>True if it can be converted else false</returns>
     private static bool StringIsFreeOfTroublesomeCharacters(string inString)
     {
         if (inString == null) return true;
-        return inString.All(ch => ((ch >= 0x0020 && ch <= 0xD7FF) || (ch >= 0xE000 && ch <= 0xFFFD) || ch == 0x0009 || ch == 0x000A || ch == 0x000D));
+        try
+        {
+            //Returns the passed-in string if all the characters and surrogate pair characters in the string argument are valid XML characters,
+            //otherwise an XmlException is thrown with information on the first invalid character encountered.
+            XmlConvert.VerifyXmlChars(inString);
+            return true;
+        }
+        catch (XmlException)
+        {
+            return false;
+        }
     }
 }
