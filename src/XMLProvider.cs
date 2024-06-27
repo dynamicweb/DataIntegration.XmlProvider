@@ -950,12 +950,14 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
                         while (!reader.IsDone())
                         {
                             sourceRow = reader.GetNext();
-                            ProcessInputRow(map, sourceRow);
-                            writer.Write(sourceRow);
-                            counter += 1;
+                            if (ProcessInputRow(sourceRow, map))
+                            {
+                                writer.Write(sourceRow);
+                                counter += 1;
 
-                            if (counter % 5000 == 0)
-                                Logger.Log(counter + " rows exported to table: " + map.DestinationTable.Name);
+                                if (counter % 5000 == 0)
+                                    Logger.Log(counter + " rows exported to table: " + map.DestinationTable.Name);
+                            }
                         }
                     }
 
