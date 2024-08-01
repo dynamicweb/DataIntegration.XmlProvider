@@ -18,7 +18,7 @@ class XmlDestinationWriter : IDestinationWriter
     private readonly bool _skipTroublesomeRows;
     private readonly CultureInfo _cultureInfo;
     private readonly ILogger _logger;
-    private readonly ColumnMappingCollection _columnMappingCollection;
+    private readonly IEnumerable<ColumnMapping> _columnMappingCollection;
 
     public Mapping Mapping { get; }
 
@@ -29,7 +29,7 @@ class XmlDestinationWriter : IDestinationWriter
         _xmlWriter = xmlWriter;
         _skipTroublesomeRows = skipTroublesomeRows;
         _cultureInfo = cultureInfo;
-        _columnMappingCollection = Mapping.GetColumnMappings();
+        _columnMappingCollection = Mapping.GetColumnMappings().Where(m => m.Active && m.SourceColumn is not null);
     }
 
     public void Write(Dictionary<string, object> p)
@@ -62,57 +62,54 @@ class XmlDestinationWriter : IDestinationWriter
             _xmlWriter.WriteAttributeString("table", Mapping.DestinationTable.Name);
             foreach (var mapping in _columnMappingCollection)
             {
-                if (mapping.Active)
+                if (p.ContainsKey(mapping.SourceColumn.Name))
                 {
-                    if (p.ContainsKey(mapping.SourceColumn.Name))
-                    {
-                        _xmlWriter.WriteStartElement("column");
-                        _xmlWriter.WriteAttributeString("columnName", mapping.DestinationColumn.Name);
+                    _xmlWriter.WriteStartElement("column");
+                    _xmlWriter.WriteAttributeString("columnName", mapping.DestinationColumn.Name);
 
-                        if (mapping.HasScriptWithValue)
+                    if (mapping.HasScriptWithValue)
+                    {
+                        if (mapping.SourceColumn.Type == typeof(DateTime))
                         {
-                            if (mapping.SourceColumn.Type == typeof(DateTime))
-                            {
-                                DateTime theDate = DateTime.Parse(mapping.GetScriptValue());
-                                _xmlWriter.WriteCData(theDate.ToString("dd-MM-yyyy HH:mm:ss:fff", _cultureInfo));
-                            }
-                            else if (mapping.SourceColumn.Type == typeof(decimal) ||
-                                mapping.SourceColumn.Type == typeof(double) ||
-                                mapping.SourceColumn.Type == typeof(float))
-                            {
-                                string value = ValueFormatter.GetFormattedValue(mapping.GetScriptValue(), _cultureInfo, mapping.ScriptType, mapping.ScriptValue);
-                                _xmlWriter.WriteCData(value);
-                            }
-                            else
-                            {
-                                _xmlWriter.WriteCData(mapping.GetScriptValue());
-                            }
+                            DateTime theDate = DateTime.Parse(mapping.GetScriptValue());
+                            _xmlWriter.WriteCData(theDate.ToString("dd-MM-yyyy HH:mm:ss:fff", _cultureInfo));
                         }
-                        else if (p[mapping.SourceColumn.Name] is DBNull || p[mapping.SourceColumn.Name] is null)
+                        else if (mapping.SourceColumn.Type == typeof(decimal) ||
+                            mapping.SourceColumn.Type == typeof(double) ||
+                            mapping.SourceColumn.Type == typeof(float))
                         {
-                            _xmlWriter.WriteAttributeString("isNull", "true");
-                        }
-                        else if (mapping.SourceColumn.Type == typeof(DateTime))
-                        {
-                            if (DateTime.TryParse(mapping.ConvertInputValueToOutputValue(p[mapping.SourceColumn.Name])?.ToString(), out var theDateTime))
-                            {
-                                _xmlWriter.WriteCData(theDateTime.ToString("dd-MM-yyyy HH:mm:ss:fff", _cultureInfo));
-                            }
-                            else
-                            {
-                                _xmlWriter.WriteCData(DateTime.MinValue.ToString("dd-MM-yyyy HH:mm:ss:fff", CultureInfo.InvariantCulture));
-                            }
+                            string value = ValueFormatter.GetFormattedValue(mapping.GetScriptValue(), _cultureInfo, mapping.ScriptType, mapping.ScriptValue);
+                            _xmlWriter.WriteCData(value);
                         }
                         else
                         {
-                            _xmlWriter.WriteCData(string.Format(_cultureInfo, "{0}", mapping.ConvertInputValueToOutputValue(p[mapping.SourceColumn.Name])));
+                            _xmlWriter.WriteCData(mapping.GetScriptValue());
                         }
-                        _xmlWriter.WriteEndElement();
+                    }
+                    else if (p[mapping.SourceColumn.Name] is DBNull || p[mapping.SourceColumn.Name] is null)
+                    {
+                        _xmlWriter.WriteAttributeString("isNull", "true");
+                    }
+                    else if (mapping.SourceColumn.Type == typeof(DateTime))
+                    {
+                        if (DateTime.TryParse(mapping.ConvertInputValueToOutputValue(p[mapping.SourceColumn.Name])?.ToString(), out var theDateTime))
+                        {
+                            _xmlWriter.WriteCData(theDateTime.ToString("dd-MM-yyyy HH:mm:ss:fff", _cultureInfo));
+                        }
+                        else
+                        {
+                            _xmlWriter.WriteCData(DateTime.MinValue.ToString("dd-MM-yyyy HH:mm:ss:fff", CultureInfo.InvariantCulture));
+                        }
                     }
                     else
                     {
-                        throw new Exception(BaseDestinationWriter.GetRowValueNotFoundMessage(p, mapping.SourceColumn.Table.Name, mapping.SourceColumn.Name));
+                        _xmlWriter.WriteCData(string.Format(_cultureInfo, "{0}", mapping.ConvertInputValueToOutputValue(p[mapping.SourceColumn.Name])));
                     }
+                    _xmlWriter.WriteEndElement();
+                }
+                else
+                {
+                    throw new Exception(BaseDestinationWriter.GetRowValueNotFoundMessage(p, mapping.SourceColumn.Table.Name, mapping.SourceColumn.Name));
                 }
             }
             _xmlWriter.WriteEndElement();
