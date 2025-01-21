@@ -625,7 +625,8 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
 
     public override Schema GetOriginalDestinationSchema()
     {
-        return _schema = new Schema();
+        _schema ??= GetOriginalSourceSchema();
+        return _schema;
     }
 
     public override void OverwriteSourceSchemaToOriginal()
@@ -634,13 +635,12 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
     }
 
     public override void OverwriteDestinationSchemaToOriginal()
-    {
-        _schema = new Schema();
+    {        
     }
 
     Schema IDestination.GetSchema()
     {
-        _schema ??= new Schema();
+        _schema ??= GetOriginalSourceSchema();
         return _schema;
     }
 
