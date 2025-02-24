@@ -252,7 +252,7 @@ public class XmlProvider : BaseProvider, ISource, IDestination, IParameterOption
             }
         }
 
-        if (XslTransform && File.Exists(Path.Combine(WorkingDirectory, XslFile)))
+        if (XslTransform && File.Exists(WorkingDirectory.CombinePaths(XslFile)))
         {
             XslCompiledTransform oTransform = new XslCompiledTransform();
             XsltSettings xsltSettings = new XsltSettings();
