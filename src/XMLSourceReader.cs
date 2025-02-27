@@ -64,14 +64,7 @@ class XmlSourceReader : ISourceReader
 
     private bool RowMatchesConditions()
     {
-        foreach (MappingConditional conditional in _mapping.Conditionals)
-        {
-            if (!_provider.CheckCondition(conditional, _nextRow))
-            {
-                return false;
-            }
-        }
-        return true;
+        return _mapping.Conditionals?.CheckConditionals(_nextRow) ?? true;
     }
 
     public Dictionary<string, object> GetNext()
